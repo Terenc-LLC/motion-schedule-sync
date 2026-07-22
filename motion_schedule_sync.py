@@ -226,9 +226,11 @@ def should_consider(task: dict, include_recurring: bool) -> bool:
 
 
 def patch_schedule(task: dict, schedule_name: str, api_key: str, dry_run: bool, user: str):
+    # NOTE: the API docs mark workspaceId (and name) as required on PATCH, but
+    # the live endpoint rejects workspaceId with 400 "property workspaceId
+    # should not exist". Send only what the endpoint actually accepts.
     body = {
-        "name": task["name"],                       # required on PATCH; echo
-        "workspaceId": task["workspace"]["id"],     # required on PATCH; echo
+        "name": task["name"],                       # accepted; echoed unchanged
         "autoScheduled": {
             "schedule": schedule_name,
             "deadlineType": task.get("deadlineType") or "SOFT",  # preserve HARD
