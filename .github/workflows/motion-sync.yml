@@ -32,9 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -44,7 +44,7 @@ jobs:
       # Restore the state file from the most recent run. The per-run key with
       # a shared restore prefix is the standard pattern for a rolling cache.
       - name: Restore sync state
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: state
           key: motion-state-${{ github.run_id }}
@@ -78,7 +78,7 @@ jobs:
 
       - name: Save sync state
         if: always()
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: state
           key: motion-state-${{ github.run_id }}
