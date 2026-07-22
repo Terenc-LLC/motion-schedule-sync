@@ -65,11 +65,11 @@ jobs:
         env:
           MOTION_SYNC_STATE: state/motion_state.json
           MOTION_SYNC_REDACT: "1"
-          MOTION_SYNC_LOG: "none"   # silent: no run output at all; switch to
+          MOTION_SYNC_LOG: "full"   # silent: no run output at all; switch to
                                     # "errors" if you ever need to debug
         run: |
           mkdir -p state
-          python motion_schedule_sync.py --once
+          python motion_schedule_sync.py --once --dry-run
 
       # Remove credentials before any later step could touch them.
       - name: Scrub keys file
