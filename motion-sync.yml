@@ -1,0 +1,84 @@
+# Place this file at: .github/workflows/motion-sync.yml
+#
+# Required repository secret (Settings -> Secrets and variables -> Actions):
+#   MOTION_KEYS_JSON  — the full contents of motion_keys.json:
+#     { "users": [ { "name": "Chris", "api_key": "..." }, ... ] }
+#
+# Notes:
+# * Cron times are UTC. The times below target US Central:
+#     12:00 UTC = 7:00 AM CDT (summer). During CST (winter) they land an hour
+#     earlier local; adjust the crons in Nov/Mar if the exact hour matters.
+# * GitHub schedule triggers can fire 5-15 minutes late under load.
+# * MOTION_SYNC_REDACT=1 keeps task/project names and emails out of the
+#   publicly visible run logs. Do not remove it on a public repo.
+
+name: Motion schedule sync
+
+on:
+  schedule:
+    - cron: "0 12 * * *"          # daily ~7:00 AM Central
+    - cron: "*/15 13-23 * * 1-5"  # every 15 min, ~8 AM-6:45 PM Central, weekdays
+  workflow_dispatch: {}            # manual run button
+
+permissions:
+  contents: read
+
+concurrency:
+  group: motion-sync              # never let two passes overlap
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      # Restore the state file from the most recent run. The per-run key with
+      # a shared restore prefix is the standard pattern for a rolling cache.
+      - name: Restore sync state
+        uses: actions/cache/restore@v4
+        with:
+          path: state
+          key: motion-state-${{ github.run_id }}
+          restore-keys: |
+            motion-state-
+
+      - name: Write keys file from secret
+        env:
+          MOTION_KEYS_JSON: ${{ secrets.MOTION_KEYS_JSON }}
+        run: |
+          if [ -z "$MOTION_KEYS_JSON" ]; then
+            echo "::error::MOTION_KEYS_JSON secret is not set"; exit 1
+          fi
+          printf '%s' "$MOTION_KEYS_JSON" > motion_keys.json
+          chmod 600 motion_keys.json
+
+      - name: Run sync
+        env:
+          MOTION_SYNC_STATE: state/motion_state.json
+          MOTION_SYNC_REDACT: "1"
+          MOTION_SYNC_LOG: "none"   # silent: no run output at all; switch to
+                                    # "errors" if you ever need to debug
+        run: |
+          mkdir -p state
+          python motion_schedule_sync.py --once
+
+      # Remove credentials before any later step could touch them.
+      - name: Scrub keys file
+        if: always()
+        run: rm -f motion_keys.json
+
+      - name: Save sync state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state
+          key: motion-state-${{ github.run_id }}
