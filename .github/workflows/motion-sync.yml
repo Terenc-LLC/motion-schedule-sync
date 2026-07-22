@@ -69,7 +69,7 @@ jobs:
                                     # "errors" if you ever need to debug
         run: |
           mkdir -p state
-          python motion_schedule_sync.py --once --dry-run
+          python motion_schedule_sync.py --once
 
       # Remove credentials before any later step could touch them.
       - name: Scrub keys file
