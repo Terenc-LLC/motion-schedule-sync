@@ -28,6 +28,20 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Separate job so only this one holds a token that can change Actions
+  # settings; the sync job, which handles the Motion keys, stays read-only.
+  keepalive:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 12 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Re-enable this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/motion-sync.yml/enable"
+
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 15
