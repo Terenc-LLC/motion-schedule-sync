@@ -17,7 +17,7 @@ name: Motion schedule sync
 on:
   schedule:
     - cron: "0 12 * * *"          # daily ~7:00 AM Central
-    - cron: "*/15 13-23 * * 1-5"  # every 15 min, ~8 AM-6:45 PM Central, weekdays
+    - cron: "7,22,37,52 13-23 * * 1-5"  # every 15 min, ~8 AM-6:45 PM Central, weekdays
   workflow_dispatch: {}            # manual run button
 
 permissions:
